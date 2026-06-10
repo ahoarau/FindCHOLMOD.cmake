@@ -1,0 +1,72 @@
+[workspace]
+name = "findcholmod-cmake"
+version = "1.0.0"
+description = "Backward-compatible FindCHOLMOD.cmake module"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "osx-64", "linux-64", "linux-aarch64", "win-64"]
+
+[feature.build.dependencies]
+cmake      = ">=3.16"
+ninja      = "*"
+libblas    = "*"
+liblapack  = "*"
+c-compiler = "*"
+
+[feature.build.tasks]
+configure = "cmake -S example -B build -G Ninja"
+build     = { cmd = "cmake --build build",                       depends-on = ["configure"] }
+test      = { cmd = "ctest --test-dir build --output-on-failure", depends-on = ["build"] }
+demo      = { cmd = "./build/cholmod_demo",                       depends-on = ["build"] }
+clean     = "rm -rf build"
+
+[feature.suitesparse5.dependencies]
+suitesparse = ">=5,<6"
+
+[feature.suitesparse7.dependencies]
+suitesparse = ">=7,<8"
+
+[feature.suitesparse5]
+platforms = ["osx-arm64", "osx-64", "linux-64", "win-64"]
+
+[feature.ubuntu22]
+platforms = ["osx-arm64", "osx-64", "linux-64", "linux-aarch64"]
+
+[feature.ubuntu24]
+platforms = ["osx-arm64", "osx-64", "linux-64", "linux-aarch64"]
+
+[feature.ubuntu22.tasks]
+test  = "scripts/test-ubuntu.sh 22.04"
+demo  = "scripts/test-ubuntu.sh 22.04"
+shell = "container run --rm -it -v $PIXI_PROJECT_ROOT:/work -w /work ubuntu:22.04 bash"
+
+[feature.ubuntu24.tasks]
+test  = "scripts/test-ubuntu.sh 24.04"
+demo  = "scripts/test-ubuntu.sh 24.04"
+shell = "container run --rm -it -v $PIXI_PROJECT_ROOT:/work -w /work ubuntu:24.04 bash"
+
+[feature.no-cholmod.dependencies]
+cmake = ">=3.16"
+ninja = "*"
+
+[feature.no-cholmod.tasks]
+test  = "cmake -S test-quiet -B build-quiet -G Ninja"
+clean = "rm -rf build-quiet"
+
+# Test for the OpenMP detection logic.
+[feature.unit.dependencies]
+cmake = ">=3.16"
+ninja = "*"
+
+[feature.unit.tasks]
+configure = "cmake -S test -B build-unit -G Ninja"
+test      = { cmd = "ctest --test-dir build-unit --output-on-failure", depends-on = ["configure"] }
+clean     = "rm -rf build-unit"
+
+[environments]
+default      = { features = ["build", "suitesparse7"] }
+suitesparse5 = { features = ["build", "suitesparse5"], no-default-feature = true }
+suitesparse7 = { features = ["build", "suitesparse7"], no-default-feature = true }
+ubuntu22     = { features = ["ubuntu22"],              no-default-feature = true }
+ubuntu24     = { features = ["ubuntu24"],              no-default-feature = true }
+no-cholmod   = { features = ["no-cholmod"],            no-default-feature = true }
+unit         = { features = ["unit"],                  no-default-feature = true }
